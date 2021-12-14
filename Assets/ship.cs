@@ -169,9 +169,9 @@ public class ship : MonoBehaviour
             C[0] = Mathf.Atan2((C[3] - V0[1]), (C[2] - V0[0]));
         }
         for (int i = V0.Count - 1; i >= 0; i--) {
-            V0[i] += RightParts(V0, C[0])[i] * Time.deltaTime;                     //Èíòåãðèðîâàíèå
+            V0[i] += RightParts(V0, C[0])[i] * Time.deltaTime;                     //Интегрирование
         }
-        t += Time.deltaTime;                                                       //ìåòîäîì Ýéëåðà
+        t += Time.deltaTime;                                                       //Методом Эйлера
         transform.rotation = Quaternion.Euler(0, 0, C[0] * Mathf.Rad2Deg + 90);    //Поворот корабля
         V = Mathf.Sqrt(V0[2] * V0[2] + V0[3] * V0[3]);
         transform.position = new Vector2(V0[0], V0[1]);
