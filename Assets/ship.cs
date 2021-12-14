@@ -8,11 +8,11 @@ public class ship : MonoBehaviour
 {
     public float K = 0f;
     public float m = 1000f;
-    public GameObject planet;           //Íåáåñíûé îáúåêò, ê êîòîðîìó áóäåò ëåòåòü êîðàáëü
-    public float Ft = 20000f;           //Ñèëà òÿãè
+    public GameObject planet;           //Небесный объект, к которому будет лететь корабль
+    public float Ft = 20000f;           //Сила тяги
     public float V = 0f;
 
-    private List<float> V0;             //Âåêòîð ñîñòîÿíèÿ (V0)
+    private List<float> V0;             //Вектор состояния (V0)
     public List<float> C;
     public float t = 0, cur_R;
     private Sun Sun_cs;
@@ -20,7 +20,7 @@ public class ship : MonoBehaviour
     private Sputnik Sputnik_cs;
     private string[] tags = { "Star", "Planet", "Sputnik" };
 
-    /*GameObject Cloth_Cel(){             //íàõîæäåíèå áëèæàéùåãî îáúåêòà
+    /*GameObject Cloth_Cel(){             //Нахождение ближайшего объекта (пока что не используется)
         float distance = Mathf.Infinity;
         Vector3 position = transform.position;
         foreach (string name in tags){
@@ -44,7 +44,7 @@ public class ship : MonoBehaviour
         
         var Mass = 0f;
         float Fx = 0f, Fy=0f;
-        //Íàõîæäåíèå ðåçóëüòèðóþùåé ñèëû òÿãîòåíèÿ
+        //нахождение результирующей силы тяготения
         foreach (string name in tags) {
             GameObject[] Cel_Obj = GameObject.FindGameObjectsWithTag(name);
             foreach (GameObject go in Cel_Obj) {
@@ -74,47 +74,47 @@ public class ship : MonoBehaviour
     List<float> Find_Course(){
         List <float> Course= new List<float> { 0,0,0,0};
        
-        //âåêòîð ñîòîÿíèÿ êîðîáëÿ
+        //вектор состояния моделируемого корабля
         List<float> X_sh = new List<float> { transform.position.x, transform.position.y, 0, 0};
 
-        //Ïàðàìåòðû ïëàíåòû
-            //Ðàäèóñ îðáèòû
+        //Параметры планеты
+            //Радиус орбиты
         float radius = Mathf.Sqrt(Mathf.Pow(planet.transform.position.x, 2) + Mathf.Pow(planet.transform.position.y, 2));
         Transform parent = planet.transform.parent;
         Sun_cs = GameObject.Find(planet.transform.parent.gameObject.name).GetComponent<Sun>();
 
-            //Ñêîðîñòü ïëàíåòû
+            //Скорость планеты
         float speed = Mathf.Sqrt(Sun_cs.Mass) / Mathf.Sqrt(Mathf.Pow(radius, 3));
 
-            //Âåêòîð ïîëîæåíèÿ ïëàíåòû
+            //Вектор положения планеты
         Vector2 pos_co = new Vector2();
         Vector2 cashedCenter = new Vector2(parent.position.x, parent.position.y) + new Vector2(radius, 0);
 
-        //Ðàññòîÿíèå îò êîðàáëÿ äî öåíòðà ñèñòåìû (îðáèòû)
+        //Расстояние от корабля до центра системы (орбиты)
         var Rac = Mathf.Sqrt(Mathf.Pow(X_sh[0], 2) + Mathf.Pow(X_sh[1], 2));
 
         //StreamWriter sw;
-        //Êîîðäèíàòû áëèæàéøåé òî÷êè îðáèòû
+        //Координаты ближайшей точки орбиты
         float xb = X_sh[0] * (radius / Rac);
         float yb = X_sh[1] * (radius / Rac);
 
-        //Êóðñ äî òî÷êè (xb, yb)
+        //Курс до точки (xb, yb)
         Course[0] = Mathf.Atan2((yb- X_sh[1]) , (xb- X_sh[0]));
         
         float pogreshnost = 1000f, pog_time=2f;
 
-        //delta_sh - âðåìÿ çà êîòîðîå ïðèëåòèò êîðàáëü â òî÷êó (xb, yb)
-        //delta_co - âðåìÿ çà êîòîðîå ïðèëåòèò ïëàíåòà â òî÷êó (xb, yb)
+        //delta_sh - время полёта корабля до точки (xb, yb)
+        //delta_co - то же самое, но для планеты (xb, yb)
         float delta_sh = 0 ,delta_co=0;
         StreamWriter sw = new StreamWriter("Course.txt", false); sw.Close();
         sw = new StreamWriter("Time.txt", false); sw.Close();
-        //ïàðàìåòð çàäàíèÿ òî÷êè (xb, yb)
+        //угол для задания параметрического опредленеия координат точки (xb, yb)
         float alpha = Mathf.Acos(xb / radius)*Mathf.Rad2Deg;
-
+        //new_R - минимальное расстояние до точки (xb, yb)
         float old_R = 0f, new_R = Mathf.Sqrt(Mathf.Pow((X_sh[0] - xb), 2) + Mathf.Pow((X_sh[1] - yb), 2));
         do {
             
-            //öèêë èçìåðåíèÿ delta_sh
+            //цикл измерения delta_sh (моделирование полёта корабля)
             do {
                 old_R = new_R;
                 for (int i = 0; i < 4; i++)
@@ -123,7 +123,7 @@ public class ship : MonoBehaviour
                 delta_sh += Time.deltaTime;
             } while (new_R<old_R);
             
-            //öèêë èçìåíåíèÿ delta_co
+            //цикл измерения delta_co (моделирование движения планеты)
             do {
                 delta_co += Time.deltaTime;
                 var x = Mathf.Cos(delta_co * speed) * radius;
@@ -131,7 +131,7 @@ public class ship : MonoBehaviour
                 pos_co = new Vector2(x, y) + cashedCenter - new Vector2(radius, 0);
             } while ((Mathf.Abs(pos_co.x - xb) >= pogreshnost) || (Mathf.Abs(pos_co.y - yb) >= pogreshnost));
 
-            //Óñëîâèå âûõîäà èç öèêëà
+            //Условие выхода из цикла
             if (Mathf.Abs(delta_sh - delta_co) <= pog_time) {
                 Course[0] = Mathf.Atan2(yb - X_sh[1], xb - X_sh[0]);
                 Course[1] = new_R;
@@ -140,7 +140,7 @@ public class ship : MonoBehaviour
                 break;
             }
 
-            //Ïîðÿäîê äåéòñâèé ïðè ïðîäîëæåíèè öèêëà
+            //Порядок действий при продолжении цикла
             if (Mathf.Abs(delta_sh - delta_co) > pog_time) {
                 alpha -= 1f;
                 xb = radius * Mathf.Cos(alpha * Mathf.Deg2Rad) + cashedCenter.x - radius;
